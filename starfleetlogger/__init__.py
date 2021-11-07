@@ -12,7 +12,7 @@ key = encrypt.load_key()
 
 log_status = LOG.NOTBEGUN
 stardate = ''
-audio_data = []
+audio_data = ''
 
 def recognize_worker():
     # this runs in a background thread
@@ -39,7 +39,7 @@ def recognize_worker():
                 stardate = stardate.replace(' ', '-', -1)
 
             if log_status == LOG.INPROGRESS:
-                audio_data.append(audio.get_flac_data())
+                encrypt.encrypt(f"Stardate-{stardate}.encrypted", key, audio.get_flac_data())
 
             # check if the hotwords are in the sentence to end the log
             if 'captain' in temp_speech and 'out' in temp_speech and len(temp_speech.split()) <= 5:
@@ -48,7 +48,7 @@ def recognize_worker():
 
             print(log_status)
 
-            print("Google Speech Recognition thinks you said " + speech)
+            print("Recognition software thinks you said " + speech)
         except sr.UnknownValueError:
             print("Recognition software could not understand audio")
         except sr.RequestError as e:
@@ -76,9 +76,7 @@ with sr.Microphone() as source:
 # # Code for encryption
 # with sr.Microphone() as source:
 #     audio = r.listen(source)
-for audio_snippet in audio_data:
-    print('1')
-    encrypt.encrypt(f"Stardate-{stardate}.encrypted", key, audio_snippet) # begin the encyrption and storing process
+# encrypt.encrypt(f"Stardate-{stardate}.encrypted", key, audio_data) # begin the encyrption and storing process
 
 audio_queue.join()  # block until all current audio processing jobs are done
 audio_queue.put(None)  # tell the recognize_thread to stop
