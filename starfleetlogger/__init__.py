@@ -1,11 +1,12 @@
 from threading import Thread
 from queue import Queue
 import speech_recognition as sr
-
+from Log import LOG
 
 r = sr.Recognizer()
 audio_queue = Queue()
 
+log_status = LOG.NOTBEGUN
 
 def recognize_worker():
     # this runs in a background thread
@@ -15,14 +16,28 @@ def recognize_worker():
 
         # received audio data, now we'll recognize it using Google Speech Recognition
         try:
-            # for testing purposes, we're just using the default API key
-            # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
-            # instead of `r.recognize_google(audio)`
-            print("Google Speech Recognition thinks you said " + r.recognize_google(audio))
+            # use google api to recognize speech
+            speech = r.recognize_google(audio)
+            
+            global log_in_progress
+            
+            # check if the hotwords are in the sentence to begin log
+            temp_speech = speech.lower()
+            if 'captain' in temp_speech and 'log' in temp_speech and 'star' in temp_speech and 'date' in temp_speech:
+                print('start the log')
+                log_status = LOG.INPROGRESS # set the logging process
+
+            print(log_in_progress)
+
+            if 'captain' in temp_speech and 'out' in temp_speech and len(temp_speech.split()) <= 7:
+                print('end the log')
+                log_status = LOG.OVER
+
+            print("Google Speech Recognition thinks you said " + speech)
         except sr.UnknownValueError:
-            print("Google Speech Recognition could not understand audio")
+            print("Recognition software could not understand audio")
         except sr.RequestError as e:
-            print("Could not request results from Google Speech Recognition service; {0}".format(e))
+            print("Could not request results from Recognition software; {0}".format(e))
 
         audio_queue.task_done()  # mark the audio processing job as completed in the queue
 
