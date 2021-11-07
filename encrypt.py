@@ -20,7 +20,7 @@ def decrypt(filename, key):
     """
     Given a filename (str) and key (bytes), it decrypts the file and write it
     """
-    output_file = os.path.splitext(filename)[0] + "_decrypted" + os.path.splitext(filename)[1]
+    output_file = os.path.splitext(filename)[0] + "_decrypted" + ".flac"
     input_file = os.path.splitext(filename)[0] + ".encrypted"
     f = Fernet(key)
     with open(input_file, "rb") as file:
@@ -32,20 +32,23 @@ def decrypt(filename, key):
     with open(output_file, "wb") as file:
         file.write(decrypted_data)
 
-def encrypt(filename, key):
+def encrypt(filename, key, data):
     """
     Given a filename (str) and key (bytes), it encrypts the file and write it
     """
     output_file = os.path.splitext(filename)[0] + ".encrypted"
     f = Fernet(key)
-    with open(filename, "rb") as file:
+    '''with open(filename, "rb") as file:
         # read all file data
-        file_data = file.read()
+        file_data = file.read()'''
     # encrypt data
-    encrypted_data = f.encrypt(file_data)
+    encrypted_data = f.encrypt(data)
      # write the encrypted file
     with open(output_file, "wb") as file:
         file.write(encrypted_data)
+
+if not os.path.exists("key.key"):
+    write_key()
 
 if __name__ == "__main__":
     #write_key()

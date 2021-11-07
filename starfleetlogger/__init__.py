@@ -1,10 +1,12 @@
 from threading import Thread
 from queue import Queue
 import speech_recognition as sr
+import encrypt
 
 
 r = sr.Recognizer()
 audio_queue = Queue()
+key = encrypt.load_key()
 
 
 def recognize_worker():
@@ -34,9 +36,17 @@ recognize_thread.start()
 with sr.Microphone() as source:
     try:
         while True:  # repeatedly listen for phrases and put the resulting audio on the audio processing job queue
-            audio_queue.put(r.listen(source))
+            audio_queue.put(r.listen(source, phrase_time_limit=1.5))
     except KeyboardInterrupt:  # allow Ctrl + C to shut down the program
         pass
+
+
+# Code for encryption
+with sr.Microphone() as source:
+    audio = r.listen(source)
+
+encrypt.encrypt("file.encrypted", key, audio.get_flac_data())
+
 
 audio_queue.join()  # block until all current audio processing jobs are done
 audio_queue.put(None)  # tell the recognize_thread to stop
