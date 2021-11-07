@@ -44,7 +44,7 @@ def encrypt(filename, key, data):
     # encrypt data
     encrypted_data = f.encrypt(data)
      # write the encrypted file
-    with open(output_file, "wb") as file:
+    with open(output_file, "ab") as file:
         file.write(encrypted_data)
 
 if not os.path.exists("key.key"):
@@ -55,5 +55,11 @@ if __name__ == "__main__":
 
     key = load_key()
     filename = input("filename>")
-    encrypt(filename, key)
-    decrypt(filename, key)
+    try:
+        encrypt(filename, key)
+    except:
+        pass
+    try:
+        decrypt(filename, key)
+    except Exception as e:
+        print(e)
