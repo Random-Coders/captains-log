@@ -1,10 +1,14 @@
+from math import log
 from threading import Thread
 from queue import Queue
 import speech_recognition as sr
 from Log import LOG
+import encrypt
+
 
 r = sr.Recognizer()
 audio_queue = Queue()
+key = encrypt.load_key()
 
 log_status = LOG.NOTBEGUN
 
@@ -21,17 +25,17 @@ def recognize_worker():
             
             global log_in_progress
             
-            # check if the hotwords are in the sentence to begin log
+            # check if the hotwords are in the sentence to begin the log
             temp_speech = speech.lower()
             if 'captain' in temp_speech and 'log' in temp_speech and 'star' in temp_speech and 'date' in temp_speech:
                 print('start the log')
                 log_status = LOG.INPROGRESS # set the logging process
 
-            print(log_in_progress)
-
+            # check if the hotwords are in the sentence to end the log
             if 'captain' in temp_speech and 'out' in temp_speech and len(temp_speech.split()) <= 7:
                 print('end the log')
                 log_status = LOG.OVER
+            print(log_status)
 
             print("Google Speech Recognition thinks you said " + speech)
         except sr.UnknownValueError:
@@ -49,9 +53,17 @@ recognize_thread.start()
 with sr.Microphone() as source:
     try:
         while True:  # repeatedly listen for phrases and put the resulting audio on the audio processing job queue
-            audio_queue.put(r.listen(source))
+            audio_queue.put(r.listen(source, phrase_time_limit=1.5))
     except KeyboardInterrupt:  # allow Ctrl + C to shut down the program
         pass
+
+
+# Code for encryption
+with sr.Microphone() as source:
+    audio = r.listen(source)
+
+encrypt.encrypt("file.encrypted", key, audio.get_flac_data())
+
 
 audio_queue.join()  # block until all current audio processing jobs are done
 audio_queue.put(None)  # tell the recognize_thread to stop
