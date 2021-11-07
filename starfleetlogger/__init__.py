@@ -76,9 +76,8 @@ with sr.Microphone() as source:
 # # Code for encryption
 # with sr.Microphone() as source:
 #     audio = r.listen(source)
-for audio_snippet in audio_data:
-    print('1')
-    encrypt.encrypt(f"Stardate-{stardate}.encrypted", key, audio_snippet) # begin the encyrption and storing process
+combined_data = b''.join(audio_data)
+encrypt.encrypt(f"Stardate-{stardate}.encrypted", key, combined_data) # begin the encyrption and storing process
 
 audio_queue.join()  # block until all current audio processing jobs are done
 audio_queue.put(None)  # tell the recognize_thread to stop
