@@ -1,78 +1,43 @@
-import deepspeech
-import os
-import numpy as np
-import pyaudio
-import time
+from threading import Thread
+from queue import Queue
+import speech_recognition as sr
 
-cwd = os.getcwd()
 
-model_file_path = os.path.join(cwd, 'starfleetlogger/models/deepspeech-0.9.3-models.pbmm')
-model = deepspeech.Model(model_file_path)
+r = sr.Recognizer()
+audio_queue = Queue()
 
-scorer_file_path = os.path.join(cwd, 'starfleetlogger/models/deepspeech-0.9.3-models.scorer')
-model.enableExternalScorer(scorer_file_path)
 
-lm_alpha = 0.75
-lm_beta = 1.85
-model.setScorerAlphaBeta(lm_alpha, lm_beta)
+def recognize_worker():
+    # this runs in a background thread
+    while True:
+        audio = audio_queue.get()  # retrieve the next audio processing job from the main thread
+        if audio is None: break  # stop processing if the main thread is done
 
-beam_width = 500
-model.setBeamWidth(beam_width)
+        # received audio data, now we'll recognize it using Google Speech Recognition
+        try:
+            # for testing purposes, we're just using the default API key
+            # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
+            # instead of `r.recognize_google(audio)`
+            print("Google Speech Recognition thinks you said " + r.recognize_google(audio))
+        except sr.UnknownValueError:
+            print("Google Speech Recognition could not understand audio")
+        except sr.RequestError as e:
+            print("Could not request results from Google Speech Recognition service; {0}".format(e))
 
-# import wave
-# filename = os.path.join(cwd, 'starfleetlogger/audio/8455-210777-0068.wav')
-# w = wave.open(filename, 'r')
-# rate = w.getframerate()
-# frames = w.getnframes()
-# buffer = w.readframes(frames)
-# print(rate, model.sampleRate, len(buffer))
+        audio_queue.task_done()  # mark the audio processing job as completed in the queue
 
-# ds_stream = model.createStream()
 
-# buffer_len = len(buffer)
-# offset = 0
-# batch_size = 16384
-# text = ''
+# start a new thread to recognize audio, while this thread focuses on listening
+recognize_thread = Thread(target=recognize_worker)
+recognize_thread.daemon = True
+recognize_thread.start()
+with sr.Microphone() as source:
+    try:
+        while True:  # repeatedly listen for phrases and put the resulting audio on the audio processing job queue
+            audio_queue.put(r.listen(source))
+    except KeyboardInterrupt:  # allow Ctrl + C to shut down the program
+        pass
 
-# while offset < buffer_len:
-#     end_offset = offset + batch_size
-#     chunk = buffer[]
-ds_stream = model.createStream()
-
-text_so_far = ''
-def process_audio(in_data, frame_count, time_info, status):
-    global text_so_far
-    data16 = np.frombuffer(in_data, dtype=np.int16)
-    ds_stream.feedAudioContent(data16)
-    text = ds_stream.intermediateDecode()
-    if text != text_so_far:
-        print('Interim text = {}'.format(text))
-        text_so_far = text
-    return (in_data, pyaudio.paContinue)
-
-audio = pyaudio.PyAudio()
-stream = audio.open(
-    format=pyaudio.paInt16,
-    channels=1,
-    rate=16000,
-    input=True,
-    frames_per_buffer=1024,
-    stream_callback=process_audio
-)
-
-print('Please start speaking, when done press Ctrl-C...')
-stream.start_stream()
-
-try:
-    while stream.is_active():
-        time.sleep(0.1)
-except KeyboardInterrupt:
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
-    print('Finished recording.')
-    
-    text = ds_stream.finishStream()
-    print('Final text = {}'.format(text))
-
-print('Hello there')
+audio_queue.join()  # block until all current audio processing jobs are done
+audio_queue.put(None)  # tell the recognize_thread to stop
+recognize_thread.join()  # wait for the recognize_thread to actually stop
