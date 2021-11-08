@@ -49,7 +49,7 @@ def recognize_worker():
                 stardate = stardate.replace(" ", "-", -1)
 
             if log_status == LOG.INPROGRESS:
-                audio_data.append(audio.get_flac_data())
+                encrypt.encrypt(f"Stardate-{stardate}.encrypted", key, audio.get_flac_data())
 
             # check if the hotwords are in the sentence to end the log
             if (
@@ -62,7 +62,7 @@ def recognize_worker():
 
             print(log_status)
 
-            print("Google Speech Recognition thinks you said " + speech)
+            print("Recognition software thinks you said " + speech)
         except sr.UnknownValueError:
             print("Recognition software could not understand audio")
         except sr.RequestError as e:
