@@ -1,5 +1,7 @@
-from cryptography.fernet import Fernet
 import os
+
+from cryptography.fernet import Fernet
+
 
 def write_key():
     """
@@ -8,6 +10,7 @@ def write_key():
     key = Fernet.generate_key()
     with open("key.key", "wb") as key_file:
         key_file.write(key)
+
 
 def load_key():
     """
@@ -32,26 +35,28 @@ def decrypt(filename, key):
     with open(output_file, "wb") as file:
         file.write(decrypted_data)
 
+
 def encrypt(filename, key, data):
     """
     Given a filename (str) and key (bytes), it encrypts the file and write it
     """
     output_file = os.path.splitext(filename)[0] + ".encrypted"
     f = Fernet(key)
-    '''with open(filename, "rb") as file:
+    """with open(filename, "rb") as file:
         # read all file data
-        file_data = file.read()'''
+        file_data = file.read()"""
     # encrypt data
     encrypted_data = f.encrypt(data)
-     # write the encrypted file
+    # write the encrypted file
     with open(output_file, "ab") as file:
         file.write(encrypted_data)
+
 
 if not os.path.exists("key.key"):
     write_key()
 
 if __name__ == "__main__":
-    #write_key()
+    # write_key()
 
     key = load_key()
     filename = input("filename>")
